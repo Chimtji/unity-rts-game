@@ -15,7 +15,7 @@ public partial struct TerrainMeshSystem : ISystem
     [BurstCompile]
     public void OnCreate(ref SystemState state)
     {
-        NativeHashMap<float2, TerrainChunkData> chunkMap = new NativeHashMap<float2, TerrainChunkData>(WORLD_SIZE * WORLD_SIZE, Allocator.Persistent);
+        NativeHashMap<float2, TerrainChunkData> chunkMap = new NativeHashMap<float2, TerrainChunkData>(WORLD_SIZE * WORLD_SIZE, Allocator.Domain);
 
         for (int x = 0; x < WORLD_SIZE; x++)
         {
@@ -60,7 +60,7 @@ public partial struct TerrainMeshSystem : ISystem
             chunkMap = chunkMap,
         });
 
-        CreateSideColliders(ref state);
+        // CreateSideColliders(ref state);
     }
 
     private void CreateSideColliders(ref SystemState state)
@@ -138,7 +138,7 @@ public partial struct TerrainMeshSystem : ISystem
 
     private NativeArray<float2> CreateUVs(NativeArray<float3> vertices, int size, float scale)
     {
-        NativeArray<float2> uvs = new NativeArray<float2>(vertices.Length, Allocator.Persistent);
+        NativeArray<float2> uvs = new NativeArray<float2>(vertices.Length, Allocator.Domain);
         for (int i = 0; i < vertices.Length; i++)
         {
             uvs[i] = new float2(vertices[i].x / (size * scale), vertices[i].z / (size * scale));
@@ -149,7 +149,7 @@ public partial struct TerrainMeshSystem : ISystem
 
     private NativeArray<int> CreateTriangles(int size)
     {
-        NativeArray<int> triangles = new NativeArray<int>(size * size * 6, Allocator.Persistent);
+        NativeArray<int> triangles = new NativeArray<int>(size * size * 6, Allocator.Domain);
         int index = 0;
         for (int y = 0; y < size; y++)
         {
@@ -174,7 +174,7 @@ public partial struct TerrainMeshSystem : ISystem
 
     private NativeArray<float3> CreateVertices(int size, float scale)
     {
-        NativeArray<float3> vertices = new NativeArray<float3>((size + 1) * (size + 1), Allocator.Persistent);
+        NativeArray<float3> vertices = new NativeArray<float3>((size + 1) * (size + 1), Allocator.Domain);
         int index = 0;
         for (int y = 0; y <= size; y++)
         {

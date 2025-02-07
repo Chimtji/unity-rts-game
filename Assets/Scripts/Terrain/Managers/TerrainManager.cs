@@ -41,6 +41,9 @@ public class TerrainManager : MonoBehaviour
             chunkCollider.sharedMesh = mesh;
 
         }
+
+        chunkEntities.Dispose();
+        chunkEntitiesQuery.Dispose();
     }
 
     public void Generate()
@@ -70,6 +73,9 @@ public class TerrainManager : MonoBehaviour
 
             chunksGameobjectsList.Add(gameObject);
         }
+
+        chunkEntities.Dispose();
+        chunkEntitiesQuery.Dispose();
     }
 
     private Mesh AssembleMesh(NativeArray<float3> vertices, NativeArray<float2> uvs, NativeArray<int> triangles)

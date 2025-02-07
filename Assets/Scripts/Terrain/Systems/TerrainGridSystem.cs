@@ -20,7 +20,7 @@ public partial struct TerrainGridSystem : ISystem
         state.EntityManager.AddComponent<TerrainGridTileData>(gridTileEntityPrefab);
 
         TerrainGridMap gridMap = new TerrainGridMap();
-        gridMap.entities = new NativeArray<Entity>(gridTilesCount, Allocator.Persistent);
+        gridMap.entities = new NativeArray<Entity>(gridTilesCount, Allocator.Domain);
 
         state.EntityManager.Instantiate(gridTileEntityPrefab, gridMap.entities);
 
