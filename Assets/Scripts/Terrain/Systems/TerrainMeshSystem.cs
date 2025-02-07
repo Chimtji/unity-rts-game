@@ -63,6 +63,22 @@ public partial struct TerrainMeshSystem : ISystem
         // CreateSideColliders(ref state);
     }
 
+    [BurstCompile]
+    public void OnDestroy(ref SystemState state)
+    {
+        RefRW<TerrainMeshSystemData> terrainMeshSystemData = SystemAPI.GetComponentRW<TerrainMeshSystemData>(state.SystemHandle);
+
+        for (int i = 0; i < terrainMeshSystemData.ValueRW.chunkMap.Count; i++)
+        {
+            TerrainChunkData chunkMap = terrainMeshSystemData.ValueRW.chunkMap[i];
+            chunkMap.uvs.Dispose();
+            chunkMap.triangles.Dispose();
+            chunkMap.vertices.Dispose();
+        }
+
+        terrainMeshSystemData.ValueRW.chunkMap.Dispose();
+    }
+
     private void CreateSideColliders(ref SystemState state)
     {
         for (int i = 0; i < 4; i++)
