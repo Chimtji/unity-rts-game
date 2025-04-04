@@ -1,4 +1,6 @@
 using Unity.Mathematics;
+using Unity.VisualScripting;
+using UnityEditor;
 using UnityEngine;
 
 /// <summary>
@@ -7,9 +9,9 @@ using UnityEngine;
 /// </summary>
 public static class Rubberduck
 {
-    private static float lifespan = 50f;
-    private static Color color = Color.red;
-    private static int segments = 32;
+    private static readonly float lifespan = 50f;
+    private static readonly Color color = Color.magenta;
+    private static readonly int segments = 32;
     public static void DrawLine(float3 from, float3 to)
     {
         Debug.DrawLine(from, to, color, lifespan);
@@ -79,6 +81,33 @@ public static class Rubberduck
         Debug.DrawLine(corners[1], corners[5], color, lifespan);
         Debug.DrawLine(corners[2], corners[6], color, lifespan);
         Debug.DrawLine(corners[3], corners[7], color, lifespan);
+    }
+
+    public static void DrawPlane(float3 position, float3 size)
+    {
+        float3 halfSize = size * 0.5f;
+
+        float3[] corners = new float3[4];
+        corners[0] = position + new float3(-halfSize.x, position.y, -halfSize.z);
+        corners[1] = position + new float3(halfSize.x, position.y, -halfSize.z);
+        corners[2] = position + new float3(halfSize.x, position.y, halfSize.z);
+        corners[3] = position + new float3(-halfSize.x, position.y, halfSize.z);
+
+        Debug.DrawLine(corners[0], corners[1], color, lifespan);
+        Debug.DrawLine(corners[1], corners[2], color, lifespan);
+        Debug.DrawLine(corners[2], corners[3], color, lifespan);
+        Debug.DrawLine(corners[3], corners[0], color, lifespan);
+
+        Debug.DrawLine(corners[0], corners[2], color, lifespan);
+        Debug.DrawLine(corners[1], corners[3], color, lifespan);
+    }
+
+    public static void DrawText(float3 position, string message)
+    {
+        GameObject container = Utils.GetGameObjectByName("Debug Manager");
+        string name = "debug_text";
+        Utils.ClearChildrenByName(container, name);
+        Utils.CreateWorldText(message, position, name, container.transform);
     }
 }
 

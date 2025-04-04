@@ -2,15 +2,14 @@ using Unity.Burst;
 using Unity.Collections;
 using Unity.Entities;
 using Unity.Mathematics;
-using Unity.Physics;
-using Unity.Transforms;
+using UnityEngine;
 
 public partial struct TerrainMeshSystem : ISystem
 {
     public const int WORLD_SIZE = 1;
     public const int MESH_SIZE = 100;
     public const int SCALE = 1;
-    public const int SIDE_SIZE = 2;
+    public const int SIDE_SIZE = 0;
 
     [BurstCompile]
     public void OnCreate(ref SystemState state)
@@ -48,7 +47,6 @@ public partial struct TerrainMeshSystem : ISystem
                 Entity chunkEntity = state.EntityManager.CreateEntity();
                 state.EntityManager.AddComponent<TerrainChunkData>(chunkEntity);
                 state.EntityManager.SetComponentData(chunkEntity, chunkData);
-
             }
         }
 
@@ -59,8 +57,6 @@ public partial struct TerrainMeshSystem : ISystem
             size = MESH_SIZE * WORLD_SIZE,
             chunkMap = chunkMap,
         });
-
-        // CreateSideColliders(ref state);
     }
 
     [BurstCompile]
@@ -79,77 +75,52 @@ public partial struct TerrainMeshSystem : ISystem
         terrainMeshSystemData.ValueRW.chunkMap.Dispose();
     }
 
-    private void CreateSideColliders(ref SystemState state)
+
+    public static Vector2[] SetSharedUVOnMeshTile(int2 gridPosition, float2 uv, Vector2[] uvs)
     {
-        for (int i = 0; i < 4; i++)
-        {
-            int sideSize = MESH_SIZE * WORLD_SIZE;
+        int tileIndex = gridPosition.y * MESH_SIZE + gridPosition.x;
+        int vertexIndex = tileIndex * 6;
 
-            float3 colliderSize = float3.zero;
-            float3 colliderPosition = float3.zero;
+        // Update UVs for the first triangle
+        uvs[vertexIndex] = uv;
+        uvs[vertexIndex + 1] = uv;
+        uvs[vertexIndex + 2] = uv;
 
-            // Bottom side
-            if (i == 0)
-            {
-                colliderSize = new float3(sideSize, 1, 1);
-                colliderPosition = new float3(sideSize / 2f, colliderSize.y / 2f, -(colliderSize.z / 2f));
-                // Rubberduck.DrawBox(colliderPosition, colliderSize);
-            }
-            // Top side
-            else if (i == 1)
-            {
-                colliderSize = new float3(sideSize, 1, 1);
-                colliderPosition = new float3(sideSize / 2f, colliderSize.y / 2f, sideSize + (colliderSize.z / 2f));
-                // Rubberduck.DrawBox(colliderPosition, colliderSize);
-            }
-            // Left side
-            else if (i == 2)
-            {
-                colliderSize = new float3(1, 1, sideSize);
-                colliderPosition = new float3(-(colliderSize.x / 2f), colliderSize.y / 2f, sideSize / 2f);
-                // Rubberduck.DrawBox(colliderPosition, colliderSize);
-            }
-            // Right side
-            else if (i == 3)
-            {
-                colliderSize = new float3(1, 1, sideSize);
-                colliderPosition = new float3(sideSize + (colliderSize.x / 2f), colliderSize.y / 2f, sideSize / 2f);
-                // Rubberduck.DrawBox(colliderPosition, colliderSize);
-            }
+        // Update UVs for the second triangle
+        uvs[vertexIndex + 3] = uv;
+        uvs[vertexIndex + 4] = uv;
+        uvs[vertexIndex + 5] = uv;
 
-            Entity edgeColliderPrefab = state.EntityManager.CreateEntity();
-            AddPhysicsCollider(edgeColliderPrefab, state.EntityManager, colliderPosition, colliderSize);
-            state.EntityManager.AddComponentData(edgeColliderPrefab, new LocalTransform
-            {
-                Position = float3.zero,
-                Rotation = quaternion.identity,
-                Scale = 1f
-            });
-        }
+        return uvs;
     }
 
-    private void AddPhysicsCollider(Entity entity, EntityManager entityManager, float3 center, float3 size)
+    public static Vector2[] SetPartOfTextureOnMeshTile(int2 gridPosition, int textureX, int textureY, Vector2[] uvs, int width, int height, int textureWidth, int textureHeight)
     {
-        // Create a BoxCollider BlobAssetReference
-        BlobAssetReference<Collider> boxCollider = BoxCollider.Create(
-            new BoxGeometry
-            {
-                Center = center,
-                Size = size,
-                Orientation = quaternion.identity
-            },
-            new CollisionFilter
-            {
-                BelongsTo = ~0u,   // Default collision layer
-                CollidesWith = ~0u // Collides with everything
-            }
-        );
+        int tileIndex = gridPosition.y * MESH_SIZE + gridPosition.x;
+        int vertexIndex = tileIndex * 6;
 
-        // Add the PhysicsCollider component to the entity
-        entityManager.AddComponentData(entity, new PhysicsCollider
-        {
-            Value = boxCollider
-        });
+        // Bottom Left Triangle
+        // --- bottom left
+        uvs[vertexIndex + 0] = ConvertPixelsToUVCoordinate(textureX, textureY, textureWidth, textureHeight);
+        // --- top left
+        uvs[vertexIndex + 1] = ConvertPixelsToUVCoordinate(textureX, textureY + height, textureWidth, textureHeight);
+        // --- bottom right
+        uvs[vertexIndex + 2] = ConvertPixelsToUVCoordinate(textureX + width, textureY, textureWidth, textureHeight);
+
+        // Top Right Triangle
+        // --- bottom right
+        uvs[vertexIndex + 3] = ConvertPixelsToUVCoordinate(textureX + width, textureY, textureWidth, textureHeight);
+        // --- top left
+        uvs[vertexIndex + 4] = ConvertPixelsToUVCoordinate(textureX, textureY + height, textureWidth, textureHeight);
+        // --- top right
+        uvs[vertexIndex + 5] = ConvertPixelsToUVCoordinate(textureX + width, textureY + height, textureWidth, textureHeight);
+
+        return uvs;
+    }
+
+    public static float2 ConvertPixelsToUVCoordinate(int x, int y, int textureWidth, int textureHeight)
+    {
+        return new float2((float)x / textureWidth, (float)y / textureHeight);
     }
 
     private NativeArray<float2> CreateUVs(NativeArray<float3> vertices, int size, float scale)
@@ -171,17 +142,17 @@ public partial struct TerrainMeshSystem : ISystem
         {
             for (int x = 0; x < size; x++)
             {
-                int vertexIndex = y * (size + 1) + x;
+                int vertexIndex = (y * size + x) * 6;
 
                 // First triangle
                 triangles[index++] = vertexIndex;
-                triangles[index++] = vertexIndex + size + 1;
                 triangles[index++] = vertexIndex + 1;
+                triangles[index++] = vertexIndex + 2;
 
                 // Second triangle
-                triangles[index++] = vertexIndex + 1;
-                triangles[index++] = vertexIndex + size + 1;
-                triangles[index++] = vertexIndex + size + 2;
+                triangles[index++] = vertexIndex + 3;
+                triangles[index++] = vertexIndex + 4;
+                triangles[index++] = vertexIndex + 5;
             }
         }
 
@@ -190,51 +161,30 @@ public partial struct TerrainMeshSystem : ISystem
 
     private NativeArray<float3> CreateVertices(int size, float scale)
     {
-        NativeArray<float3> vertices = new NativeArray<float3>((size + 1) * (size + 1), Allocator.Domain);
+        NativeArray<float3> vertices = new NativeArray<float3>(size * size * 6, Allocator.Domain);
         int index = 0;
-        for (int y = 0; y <= size; y++)
+        for (int y = 0; y < size; y++)
         {
-            for (int x = 0; x <= size; x++)
+            for (int x = 0; x < size; x++)
             {
-                float3 position = new float3(x, 0, y);
-                position = IncludeSidesCalculation(position, size);
+                float3 v0 = new float3(x * scale, 0, y * scale);
+                float3 v1 = new float3((x + 1) * scale, 0, y * scale);
+                float3 v2 = new float3(x * scale, 0, (y + 1) * scale);
+                float3 v3 = new float3((x + 1) * scale, 0, (y + 1) * scale);
 
-                vertices[index++] = new float3(position.x * scale, position.y, position.z * scale);
+                // First triangle
+                vertices[index++] = v0;
+                vertices[index++] = v2;
+                vertices[index++] = v1;
+
+                // Second triangle
+                vertices[index++] = v1;
+                vertices[index++] = v2;
+                vertices[index++] = v3;
             }
         }
 
         return vertices;
-
-    }
-
-    private float3 IncludeSidesCalculation(float3 position, int size)
-    {
-        float xPos = position.x;
-        float yPos = position.y;
-        float zPos = position.z;
-
-        if (position.x == 0)
-        {
-            yPos = -1;
-            xPos = 1;
-        }
-        if (position.z == 0)
-        {
-            yPos = -1;
-            zPos = 1;
-        }
-        if (position.x == size)
-        {
-            yPos = -1;
-            xPos = size - 1;
-        }
-        if (position.z == size)
-        {
-            yPos = -1;
-            zPos = size - 1;
-        }
-
-        return new float3(xPos, yPos, zPos);
     }
 
     private static int CalculateIndex(int x, int y, int width)
@@ -247,5 +197,4 @@ public partial struct TerrainMeshSystem : ISystem
         float2 pos = coordinate * MESH_SIZE / SCALE;
         return new float3(pos.x - (SIDE_SIZE / 2), 0f, pos.y - (SIDE_SIZE / 2));
     }
-
 }

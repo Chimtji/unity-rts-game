@@ -5,6 +5,30 @@ using UnityEngine;
 
 public static class Utils
 {
+    public static GameObject GetGameObjectByName(string name)
+    {
+        GameObject obj = GameObject.Find(name);
+        return obj;
+    }
+
+    public static TextMesh CreateWorldText(string text, float3 position, string name = "world_text", Transform container = null)
+    {
+        GameObject gameObject = new GameObject(name, typeof(TextMesh));
+
+        Transform transform = gameObject.transform;
+        transform.localPosition = position;
+        transform.SetParent(container);
+
+        TextMesh textMesh = gameObject.GetComponent<TextMesh>();
+        textMesh.anchor = TextAnchor.UpperLeft;
+        textMesh.alignment = TextAlignment.Left;
+        textMesh.text = text;
+        textMesh.characterSize = 0.02f;
+        textMesh.fontSize = 200;
+        textMesh.color = Color.black;
+
+        return textMesh;
+    }
     /// <summary>
     /// Removes all children of the passed gameobject
     /// </summary>
@@ -21,12 +45,60 @@ public static class Utils
     }
 
     /// <summary>
+    /// Removes all children of name in the passed gameobject
+    /// </summary>
+    /// <param name="container">The gameobject which holds the objects to remove</param>
+    /// <param name="name">the name of the children to delete</param>
+    public static void ClearChildrenByName(GameObject container, string name)
+    {
+        int childCount = container.transform.childCount;
+
+        for (int i = childCount - 1; i >= 0; i--)
+        {
+            GameObject child = container.transform.GetChild(i).gameObject;
+            if (child.name == name)
+            {
+                RemoveObject(child);
+            }
+        }
+    }
+
+    /// <summary>
+    /// Finds the object with the passed name and removes it from the game
+    /// </summary>
+    public static void RemoveObjectByNameInContainer(string name, GameObject container)
+    {
+
+        Transform obj = container.transform.Find(name);
+
+        if (obj)
+        {
+            RemoveObject(obj.gameObject);
+        }
+    }
+
+    /// <summary>
     /// Finds the object with the passed name and removes it from the game
     /// </summary>
     public static void RemoveObjectByName(string name)
     {
         GameObject obj = GameObject.Find(name);
         RemoveObject(obj);
+    }
+
+    /// <summary>
+    /// Finds all objects with the passed name and removes it from the game
+    /// </summary>
+    public static void RemoveAllObjectsByName(string name)
+    {
+        GameObject[] objects = GameObject.FindObjectsByType<GameObject>(FindObjectsSortMode.None);
+        foreach (GameObject obj in objects)
+        {
+            if (obj.name == name)
+            {
+                RemoveObject(obj);
+            }
+        }
     }
 
 

@@ -688,6 +688,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1904067993}
   - component: {fileID: 1904067992}
+  - component: {fileID: 1904067994}
   m_Layer: 0
   m_Name: Terrain Manager
   m_TagString: Untagged
@@ -707,7 +708,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0f7eaa8e7c2b54d099a13a9414ca36a3, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  material: {fileID: 2100000, guid: 6615f1708a4932646adcdc55932feefa, type: 2}
+  TEMP_MATERIAL_REF: {fileID: 2100000, guid: 2425c03ff18262a4eaa45371f0fe6dcf, type: 2}
+  chunksGameobjectsList: []
 --- !u!4 &1904067993
 Transform:
   m_ObjectHideFlags: 0
@@ -723,6 +725,22 @@ Transform:
   m_Children: []
   m_Father: {fileID: 1759807467}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1904067994
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1904067991}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6075253cfdfd34df8b3a892a743a947a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  enable: 1
+  overlayType: 1
+  heatMapMaterial: {fileID: 2100000, guid: f11dfac9661844910a7711f445f5422a, type: 2}
+  flowFieldMaterial: {fileID: 2100000, guid: a71081b0dadbe401aba345834da42310, type: 2}
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0

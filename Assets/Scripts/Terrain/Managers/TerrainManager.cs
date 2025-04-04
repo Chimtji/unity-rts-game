@@ -8,12 +8,13 @@ public class TerrainManager : MonoBehaviour
 {
     /// <summary>
     /// Temporary Material Assignment
+    /// This needs to come from somewhere else, so this terrain is more dynamic
     /// </summary>
-    public Material material;
+    public Material TEMP_MATERIAL_REF;
 
     public static TerrainManager Instance { get; private set; }
 
-    private List<GameObject> chunksGameobjectsList = new List<GameObject>();
+    public List<GameObject> chunksGameobjectsList = new List<GameObject>();
 
     public void Awake()
     {
@@ -25,11 +26,50 @@ public class TerrainManager : MonoBehaviour
         Generate();
     }
 
-    public void Update()
+    public void SetOverlay(GameObject chunkObject, Material material, Vector2[] uvs)
+    {
+        MeshRenderer chunkMeshRenderer = chunkObject.GetComponent<MeshRenderer>();
+        chunkMeshRenderer.sharedMaterial = material;
+
+        MeshFilter chunkMeshFilter = chunkObject.GetComponent<MeshFilter>();
+        Mesh chunkMesh = chunkMeshFilter.mesh;
+
+        chunkMesh.uv = uvs;
+        chunkMesh.RecalculateNormals();
+        chunkMesh.RecalculateBounds();
+    }
+
+    public void ResetOverlay()
     {
         EntityManager entityManager = World.DefaultGameObjectInjectionWorld.EntityManager;
-        EntityQuery chunkEntitiesQuery = new EntityQueryBuilder(Allocator.Temp).WithAll<TerrainChunkData>().Build(entityManager);
-        NativeArray<Entity> chunkEntities = chunkEntitiesQuery.ToEntityArray(Allocator.Temp);
+        NativeArray<Entity> chunkEntities = GetChunks();
+
+        for (int i = 0; i < chunksGameobjectsList.Count; i++)
+        {
+            // Reset Material
+            GameObject chunkObject = chunksGameobjectsList[i];
+            MeshRenderer chunkMeshRenderer = chunkObject.GetComponent<MeshRenderer>();
+            chunkMeshRenderer.sharedMaterial = TEMP_MATERIAL_REF;
+
+            // Reset UVS
+            Entity chunkEntity = chunkEntities[i];
+            TerrainChunkData terrainChunkData = entityManager.GetComponentData<TerrainChunkData>(chunkEntity);
+
+            MeshFilter chunkMeshFilter = chunkObject.GetComponent<MeshFilter>();
+            Mesh chunkMesh = chunkMeshFilter.mesh;
+            chunkMesh.uv = Utils.ToVector2Array(terrainChunkData.uvs);
+
+            chunkMesh.RecalculateNormals();
+            chunkMesh.RecalculateBounds();
+        }
+
+        chunkEntities.Dispose();
+    }
+
+    private void UpdateCollider()
+    {
+        EntityManager entityManager = World.DefaultGameObjectInjectionWorld.EntityManager;
+        NativeArray<Entity> chunkEntities = GetChunks();
 
         for (int i = 0; i < chunkEntities.Length; i++)
         {
@@ -43,10 +83,9 @@ public class TerrainManager : MonoBehaviour
         }
 
         chunkEntities.Dispose();
-        chunkEntitiesQuery.Dispose();
     }
 
-    public void Generate()
+    private void Generate()
     {
         EntityManager entityManager = World.DefaultGameObjectInjectionWorld.EntityManager;
         EntityQuery chunkEntitiesQuery = new EntityQueryBuilder(Allocator.Temp).WithAll<TerrainChunkData>().Build(entityManager);
@@ -62,7 +101,7 @@ public class TerrainManager : MonoBehaviour
             gameObject.transform.parent = transform;
 
             MeshRenderer meshRenderer = gameObject.AddComponent<MeshRenderer>();
-            meshRenderer.sharedMaterial = material;
+            meshRenderer.sharedMaterial = TEMP_MATERIAL_REF;
 
             Mesh mesh = AssembleMesh(terrainChunkData.vertices, terrainChunkData.uvs, terrainChunkData.triangles);
 
@@ -91,5 +130,16 @@ public class TerrainManager : MonoBehaviour
         mesh.RecalculateBounds();
 
         return mesh;
+    }
+
+    private NativeArray<Entity> GetChunks()
+    {
+        EntityManager entityManager = World.DefaultGameObjectInjectionWorld.EntityManager;
+        EntityQuery chunkEntitiesQuery = new EntityQueryBuilder(Allocator.Temp).WithAll<TerrainChunkData>().Build(entityManager);
+        NativeArray<Entity> chunkEntities = chunkEntitiesQuery.ToEntityArray(Allocator.Temp);
+
+        chunkEntitiesQuery.Dispose();
+
+        return chunkEntities;
     }
 }
