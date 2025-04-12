@@ -5,6 +5,6 @@ using Unity.Mathematics;
 public struct TerrainMeshSystemData : IComponentData
 {
     public int scale;
-    public int size;
+    public int totalSize;
     public NativeHashMap<float2, TerrainChunkData> chunkMap;
 }

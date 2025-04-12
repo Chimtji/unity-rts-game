@@ -80,7 +80,7 @@ public class CostMapOverlayManager : MonoBehaviour
             bool hasUpdated = false;
             MeshFilter chunkMeshFilter = chunkObject.GetComponent<MeshFilter>();
             Mesh chunkMesh = chunkMeshFilter.mesh;
-            Vector2[] uvs = new Vector2[chunkMesh.vertexCount];
+            NativeArray<float2> uvs = new NativeArray<float2>(chunkMesh.vertexCount, Allocator.Temp);
 
             for (int i = 0; i < nodesOfMap.Length; i++)
             {
@@ -93,13 +93,13 @@ public class CostMapOverlayManager : MonoBehaviour
                 switch (overlayType)
                 {
                     case OverlayType.Flowfield:
-                        (Vector2[] flowFieldUvs, Material flowFieldMaterial) = CalculateFlowField(gridNodeData, gridPosition, uvs);
+                        (NativeArray<float2> flowFieldUvs, Material flowFieldMaterial) = CalculateFlowField(gridNodeData, gridPosition, uvs);
                         uvs = flowFieldUvs;
                         material = flowFieldMaterial;
                         break;
 
                     case OverlayType.Heatmap:
-                        (Vector2[] heatMapUvs, Material heatMapMaterial) = CalculateHeatmap(gridNodeData, gridPosition, uvs);
+                        (NativeArray<float2> heatMapUvs, Material heatMapMaterial) = CalculateHeatmap(gridNodeData, gridPosition, uvs);
                         uvs = heatMapUvs;
                         material = heatMapMaterial;
                         break;
@@ -117,23 +117,23 @@ public class CostMapOverlayManager : MonoBehaviour
         }
     }
 
-    private (Vector2[] uvs, Material material) CalculateHeatmap(CostMapNodeData nodeData, int2 gridPosition, Vector2[] uvs)
+    private (NativeArray<float2> uvs, Material material) CalculateHeatmap(CostMapNodeData nodeData, int2 gridPosition, NativeArray<float2> uvs)
     {
         float costNormalized = (float)nodeData.bestCost / 100;
         float2 uv = new float2(costNormalized, 0f);
-        Vector2[] calculatedUvs = TerrainMeshSystem.SetSharedUVOnMeshTile(gridPosition, uv, uvs);
+        NativeArray<float2> calculatedUvs = MeshUtils.SetSharedUVOnMeshTile(gridPosition, uv, uvs, TerrainShapeSystem.MESH_SIZE_IN_TILES);
 
         return (calculatedUvs, heatMapMaterial);
     }
 
-    private (Vector2[] uvs, Material material) CalculateFlowField(CostMapNodeData nodeData, int2 gridPosition, Vector2[] uvs)
+    private (NativeArray<float2> uvs, Material material) CalculateFlowField(CostMapNodeData nodeData, int2 gridPosition, NativeArray<float2> uvs)
     {
         int SpritesInMaterial = 11;
-        int width = TerrainMeshSystem.MESH_SIZE / SpritesInMaterial;
-        int height = TerrainMeshSystem.MESH_SIZE;
-        int textureWidth = TerrainMeshSystem.MESH_SIZE;
-        int textureHeight = TerrainMeshSystem.MESH_SIZE;
-        int x = TerrainMeshSystem.MESH_SIZE / SpritesInMaterial * 1;
+        int width = TerrainShapeSystem.MESH_SIZE_IN_TILES / SpritesInMaterial;
+        int height = TerrainShapeSystem.MESH_SIZE_IN_TILES;
+        int textureWidth = TerrainShapeSystem.MESH_SIZE_IN_TILES;
+        int textureHeight = TerrainShapeSystem.MESH_SIZE_IN_TILES;
+        int x = TerrainShapeSystem.MESH_SIZE_IN_TILES / SpritesInMaterial * 1;
         int y = 0;
 
         // Wall
@@ -145,55 +145,55 @@ public class CostMapOverlayManager : MonoBehaviour
         // Target
         else if (nodeData.bestCost == 0)
         {
-            x = TerrainMeshSystem.MESH_SIZE / SpritesInMaterial * 1;
+            x = TerrainShapeSystem.MESH_SIZE_IN_TILES / SpritesInMaterial * 1;
         }
 
         // Up
         else if (nodeData.vector.Equals(new float2(0, 1)))
         {
-            x = TerrainMeshSystem.MESH_SIZE / SpritesInMaterial * 8;
+            x = TerrainShapeSystem.MESH_SIZE_IN_TILES / SpritesInMaterial * 8;
         }
 
         // Down
         else if (nodeData.vector.Equals(new float2(0, -1)))
         {
-            x = TerrainMeshSystem.MESH_SIZE / SpritesInMaterial * 9;
+            x = TerrainShapeSystem.MESH_SIZE_IN_TILES / SpritesInMaterial * 9;
         }
 
         // Right
         else if (nodeData.vector.Equals(new float2(1, 0)))
         {
-            x = TerrainMeshSystem.MESH_SIZE / SpritesInMaterial * 6;
+            x = TerrainShapeSystem.MESH_SIZE_IN_TILES / SpritesInMaterial * 6;
         }
 
         // Left
         else if (nodeData.vector.Equals(new float2(-1, 0)))
         {
-            x = TerrainMeshSystem.MESH_SIZE / SpritesInMaterial * 7;
+            x = TerrainShapeSystem.MESH_SIZE_IN_TILES / SpritesInMaterial * 7;
         }
 
         // Top Right
         else if (nodeData.vector.Equals(new float2(1, 1)))
         {
-            x = TerrainMeshSystem.MESH_SIZE / SpritesInMaterial * 5;
+            x = TerrainShapeSystem.MESH_SIZE_IN_TILES / SpritesInMaterial * 5;
         }
         // Bottom Left
         else if (nodeData.vector.Equals(new float2(-1, -1)))
         {
-            x = TerrainMeshSystem.MESH_SIZE / SpritesInMaterial * 2;
+            x = TerrainShapeSystem.MESH_SIZE_IN_TILES / SpritesInMaterial * 2;
         }
         // Top Left
         else if (nodeData.vector.Equals(new float2(-1, 1)))
         {
-            x = TerrainMeshSystem.MESH_SIZE / SpritesInMaterial * 4;
+            x = TerrainShapeSystem.MESH_SIZE_IN_TILES / SpritesInMaterial * 4;
         }
         // Bottom Right
         else if (nodeData.vector.Equals(new float2(1, -1)))
         {
-            x = TerrainMeshSystem.MESH_SIZE / SpritesInMaterial * 3;
+            x = TerrainShapeSystem.MESH_SIZE_IN_TILES / SpritesInMaterial * 3;
         }
 
-        Vector2[] calculatedUvs = TerrainMeshSystem.SetPartOfTextureOnMeshTile(gridPosition, x, y, uvs, width, height, textureWidth, textureHeight);
+        NativeArray<float2> calculatedUvs = MeshUtils.SetPartOfTextureOnMeshTile(gridPosition, x, y, uvs, width, height, textureWidth, textureHeight, TerrainShapeSystem.MESH_SIZE_IN_TILES);
         Material material = flowFieldMaterial;
 
         return (calculatedUvs, material);

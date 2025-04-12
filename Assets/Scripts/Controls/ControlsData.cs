@@ -8,4 +8,5 @@ public struct ControlsSystemData : IComponentData
     public bool rightMouseButtonPressed;
     public bool leftMouseButtonPressed;
     public float3 clickedWorldPosition;
+    public Entity clickedEntity;
 }
