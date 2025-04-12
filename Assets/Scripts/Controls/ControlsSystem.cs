@@ -8,6 +8,10 @@ using UnityEngine.InputSystem;
 /// </summary>
 public partial struct ControlsSystem : ISystem
 {
+    /// <summary>
+    /// We create Controls ComponentData and add it to this system entity
+    /// This entity is available to all entities
+    /// </summary>
     [BurstCompile]
     public void OnCreate(ref SystemState state)
     {
@@ -22,12 +26,17 @@ public partial struct ControlsSystem : ISystem
         });
     }
 
+    /// <summary>
+    /// Records the Mouse Input and passes it to the Entity World
+    /// FYI: Mouse is Managed, so we can't burst this code, but consumers of this data can still be bursted
+    /// </summary>
     public void OnUpdate(ref SystemState state)
     {
         ControlsSystemData controlsData = SystemAPI.GetSingleton<ControlsSystemData>();
 
         // Persist
         float3 clickedPosition = controlsData.clickedWorldPosition;
+        Entity clickedEntity = controlsData.clickedEntity;
         bool rightButtonPressed = controlsData.rightMouseButtonPressed;
         bool leftButtonPressed = controlsData.leftMouseButtonPressed;
 
@@ -37,8 +46,10 @@ public partial struct ControlsSystem : ISystem
 
         if (Mouse.current.rightButton.wasPressedThisFrame)
         {
+            (float3 position, Entity entity) = MouseWorld.Instance.ReadClick();
             rightButtonPressed = true;
-            clickedPosition = MouseWorld.Instance.GetPosition();
+            clickedPosition = position;
+            clickedEntity = entity;
         }
 
         if (Mouse.current.rightButton.wasReleasedThisFrame)
@@ -49,7 +60,10 @@ public partial struct ControlsSystem : ISystem
 
         if (Mouse.current.leftButton.wasPressedThisFrame)
         {
+            (float3 position, Entity entity) = MouseWorld.Instance.ReadClick();
             leftButtonPressed = true;
+            clickedPosition = position;
+            clickedEntity = entity;
         }
         if (Mouse.current.leftButton.wasReleasedThisFrame)
         {
@@ -61,9 +75,10 @@ public partial struct ControlsSystem : ISystem
         {
             rightMouseButtonPressed = rightButtonPressed,
             leftMouseButtonPressed = leftButtonPressed,
-            clickedWorldPosition = clickedPosition,
             leftMouseButtonWasReleasedThisFrame = leftMouseButtonWasReleasedThisFrame,
             rightMouseButtonWasReleasedThisFrame = rightMouseButtonWasReleasedThisFrame,
+            clickedWorldPosition = clickedPosition,
+            clickedEntity = clickedEntity,
         });
     }
 }

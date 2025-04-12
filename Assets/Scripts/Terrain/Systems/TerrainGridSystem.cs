@@ -3,7 +3,7 @@ using Unity.Collections;
 using Unity.Burst;
 using Unity.Mathematics;
 
-[CreateAfter(typeof(TerrainMeshSystem))]
+[CreateAfter(typeof(TerrainShapeSystem))]
 public partial struct TerrainGridSystem : ISystem
 {
     [BurstCompile]
@@ -11,8 +11,8 @@ public partial struct TerrainGridSystem : ISystem
     {
         TerrainMeshSystemData terrainMeshData = SystemAPI.GetSingleton<TerrainMeshSystemData>();
 
-        int width = terrainMeshData.size;
-        int height = terrainMeshData.size;
+        int width = terrainMeshData.totalSize;
+        int height = terrainMeshData.totalSize;
         int gridTileSize = terrainMeshData.scale;
         int gridTilesCount = width * height;
 
@@ -108,9 +108,9 @@ public partial struct TerrainGridSystem : ISystem
     public static float3 GetWorldPosition(int x, int y)
     {
         return new float3(
-            x * TerrainMeshSystem.SCALE,
+            x * TerrainShapeSystem.SCALE,
             0f,
-            y * TerrainMeshSystem.SCALE
+            y * TerrainShapeSystem.SCALE
         );
     }
     public static float3 GetWorldCenterPosition(int2 gridPosition)
@@ -120,9 +120,9 @@ public partial struct TerrainGridSystem : ISystem
     public static float3 GetWorldCenterPosition(int x, int y)
     {
         return new float3(
-            x * TerrainMeshSystem.SCALE + (TerrainMeshSystem.SCALE / 2f),
+            x * TerrainShapeSystem.SCALE + (TerrainShapeSystem.SCALE / 2f),
             0f,
-            y * TerrainMeshSystem.SCALE + (TerrainMeshSystem.SCALE / 2f)
+            y * TerrainShapeSystem.SCALE + (TerrainShapeSystem.SCALE / 2f)
         );
     }
 
